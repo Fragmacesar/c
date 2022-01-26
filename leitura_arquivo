@@ -1,0 +1,139 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <math.h>
+
+int main(void)
+{	//declaração das variáveis do programa:
+float array_x[4138], array_y[4138], array_z[4138], array_t[4138];
+float array_mag_x[4138], array_mag_y[4138], array_mag_z[4138], array_freq[4138];
+float intervalo=0, sx=0;
+char *sinal, *linha_texto, *tx;
+char arquivo[50], temp[20], buffer[100], saida[100];
+int epoch=0, conta=0, linha=0, log=0, i=0, j=0, v_saida=0;
+char nome_sensor[10], aux[10];
+  	
+strcpy(arquivo,"1602245833-2715-NAO7856.txt");// envia o nome 
+  	// caso queira solicitar o caminho do arquivo
+  	//printf("Indique o caminho do arquivo e tecle enter: "); // experado: 1602245833-2715-NAO7856.txt
+  	//scanf("%s", &arquivo);
+  	
+printf("\nNome do arquivo:  " "%s", arquivo);
+FILE *ptArq;
+FILE *ptSaida;					//ponteiro para armazenar o arquivo
+ptArq = fopen(arquivo,"rt"); 	// abertura arquivo de texto
+  
+if (ptArq == NULL) 
+{ //finaliza se o arquivo é vazio ou inexistente
+ printf ("\n \n ERRO: O arquivo nao encontrado ou vazio \n");
+ system ("pause");
+ exit (1);
+}
+else 
+{
+ printf ("\n\nArquivo foi aberto com sucesso\n\n");	
+ }
+  //formatando o nome do arquivo para extração dos dados:
+	
+ sinal=strtok(arquivo,"-");// strtok divide a string 
+	
+ while(sinal != NULL) // varre a string até o fim
+		{
+		
+		if(conta==0){
+    		epoch=atoi(sinal);
+    		printf("Momento da coleta (epoch): %d \n", epoch);
+    	}
+    if(conta==1){
+    		intervalo=atof(sinal);
+    		printf("Intervalo de tempo da coleta (milissegundos): %d \n", intervalo);
+    	}
+    if(conta==2){
+    		strcpy(nome_sensor,sinal);
+    		nome_sensor[strlen(nome_sensor)-4]='\0';
+    		printf("Nome do sensor: %s \n", nome_sensor);
+    	}
+    conta++;
+    sinal = strtok(NULL, "-");
+		}
+		
+		sx=intervalo/4139;
+		printf("Constante de tempo: %f2.5f \n", sx);
+	  //lendo os dados do arquivo
+	
+	//fscanf(ptArq, "%s", buffer);
+  //printf("Primeira linha: %s\n", buffer );
+   	
+	while (!feof(ptArq))
+    {
+	    // lendo o arquivo de texto linha a linha (inclusive com o '\n')
+      linha_texto = fgets(buffer, 100, ptArq);  // leitura de até 100 caracteres ou o \n
+      if (linha_texto)  // Se conseguir ler continua
+	  	printf("Linha %d : %s",i,buffer);
+	  	tx=strtok(buffer,",");
+	  
+	 	  while(tx != NULL) // varre a string até o fim
+		    {
+			    if(log==0){
+    				array_x[i]=atof(tx);
+    				printf("Valor acelerometro X(%d): %2.12f " ,i, array_x[i]);
+    			}
+    			if(log==1){
+    				array_y[i]=atof(tx);
+    				printf("Y(%d): %2.12f " ,i, array_y[i]);
+    			}
+      		if(log==2){
+    				array_z[i]=atof(tx);
+    				printf("Z(%d): %2.12f   " ,i, array_z[i]);
+    				//constante de tempo: intervalo/(linhas -1)*i
+    				if(i>1){
+					  array_t[i]=sx*i;
+    				printf("Tempo T(%d): %2.12f \n" ,i, array_t[i]);
+    			 }
+    			else{
+    			array_t[i]=0;
+    			printf("Tempo T(%d): %2.12f \n" ,i, array_t[i]);
+    			}
+    		}
+    	log++;
+    	tx = strtok(NULL, ",");
+		}
+	log=0;
+    i++;
+  	}
+
+  fclose(ptArq);  //fechar arquivo de texto do sensor
+  ptSaida = fopen("output.txt", "wt");  // Cria o arquivo de saída do programa
+  if (ptSaida == NULL) // Se não conseguiu criar
+	  {	
+  	 printf("Problemas na CRIACAO do arquivo\n");
+	  }
+  //strcpy(saida,"Magnitude dos 3 eixos (X, Y, Z) e a frequencia em [hz] \n"); // descomentar caso queira cabeçalho no arquivo de saída
+	//v_saida = fputs(saida, ptSaida); // descomentar caso queira cabeçalho no arquivo de saída
+	// grava os dados coletados dos arrays no arquivo de texto
+	
+	for(j=0; j<i-2; j++){ // escreve arquivo de saída com base nos vetores e ponteiros do vetor
+	  sprintf(aux, "%.12f", array_x[j+1]);
+	  v_saida = fputs(aux, ptSaida);
+	  v_saida = fputs(" , ", ptSaida);
+	  sprintf(aux, "%.12f", array_y[j+1]);
+	  v_saida = fputs(aux, ptSaida);
+	  v_saida = fputs(" , ", ptSaida);
+	  sprintf(aux, "%.12f", array_z[j+1]);
+	  v_saida = fputs(aux, ptSaida);
+	  v_saida = fputs(" , ", ptSaida);
+	  sprintf(aux, "%.12f", array_t[j+1]);
+	  v_saida = fputs(aux, ptSaida);
+	  v_saida = fputs("\n", ptSaida);
+
+	}
+	
+	if (v_saida == EOF)
+    printf("Erro na Gravacao\n");
+    
+	fclose(ptSaida); // fecha arquivo de saída
+  	
+  	system("pause");
+  	return(0);
+}
